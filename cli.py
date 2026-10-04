@@ -1,10 +1,10 @@
 import requests
 import sys
 
-BASE_URL = "http://127.0.0.1:5000/items"
+BASE_URL = "http://127.0.0.1:5000"
 
-def list_items():
-    response = requests.get(BASE_URL)
+def view_all():
+    response = requests.get(f"{BASE_URL}/items")
     if response.status_code == 200:
         print("\n--- Current Inventory ---")
         for item in response.json():
@@ -12,22 +12,49 @@ def list_items():
     else:
         print("Error fetching items.")
 
-def add_item(name, quantity, price):
+def add_item():
+    name = input("Enter product name: ")
+    quantity = input("Enter quantity: ")
+    price = input("Enter price: ")
+    
     payload = {"name": name, "quantity": int(quantity), "price": float(price)}
-    response = requests.post(BASE_URL, json=payload)
+    response = requests.post(f"{BASE_URL}/items", json=payload)
     if response.status_code == 201:
         print(f"Successfully added: {response.json()['name']}")
     else:
         print("Failed to add item.")
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python cli.py [list | add <name> <qty> <price>]")
+def fetch_external():
+    barcode = input("Enter OpenFoodFacts barcode (e.g., 737628064502): ")
+    print("Fetching data...")
+    response = requests.post(f"{BASE_URL}/fetch-external/{barcode}")
+    
+    if response.status_code == 201:
+        print(f"Success! Added: {response.json()['item']['name']}")
     else:
-        command = sys.argv[1]
-        if command == "list":
-            list_items()
-        elif command == "add" and len(sys.argv) == 5:
-            add_item(sys.argv[2], sys.argv[3], sys.argv[4])
+        print(f"Error: {response.json().get('error', 'Could not fetch product')}")
+
+def main_menu():
+    while True:
+        print("\n===== Inventory Management =====")
+        print("1. View all items")
+        print("2. Add a new item")
+        print("3. Find a product on OpenFoodFacts")
+        print("4. Exit")
+        
+        choice = input("\nChoose an option (1-4): ")
+        
+        if choice == '1':
+            view_all()
+        elif choice == '2':
+            add_item()
+        elif choice == '3':
+            fetch_external()
+        elif choice == '4':
+            print("Exiting...")
+            sys.exit()
         else:
-            print("Invalid command or arguments.")
+            print("Invalid choice, please try again.")
+
+if __name__ == "__main__":
+    main_menu()
